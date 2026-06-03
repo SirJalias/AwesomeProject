@@ -1,0 +1,50 @@
+# Browse flow (x10):
+#  1. scroll the home feed down twice
+#  2. tap a product card -> opens the product screen
+#  3. wait ~1s for it to load
+#  4. tap the first product card it sees on the product screen (related rail)
+#  5. return to Home and repeat
+# Targets the testIDs on ProductCard / screens.
+appId: com.awesomeproject
+---
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "home-screen"
+    timeout: 20000
+
+- repeat:
+    times: 10
+    commands:
+      # 1. scroll the home feed down twice
+      - scroll
+      - scroll
+      # 2. open a product
+      - tapOn:
+          id: "product-card-.*"
+          index: 0
+      # 3. wait for the product screen to load (~1s)
+      - extendedWaitUntil:
+          visible:
+            id: "product-screen"
+          timeout: 10000
+      - waitForAnimationToEnd:
+          timeout: 1000
+      # 4. bring the related rail into view and tap its first card
+      - scrollUntilVisible:
+          element:
+            id: "product-card-.*"
+          direction: DOWN
+          timeout: 10000
+      - tapOn:
+          id: "product-card-.*"
+          index: 0
+      - extendedWaitUntil:
+          visible:
+            id: "product-screen"
+          timeout: 10000
+      - waitForAnimationToEnd:
+          timeout: 1000
+      # 5. back to Home (pop the two product screens) to repeat
+      - back
+      - back

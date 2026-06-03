@@ -104,6 +104,20 @@ android {
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
+        // Release-equivalent build (Hermes, bundled JS, non-debuggable) that
+        // native profilers (Perfetto, simpleperf, Android Studio Profiler) can
+        // attach to, thanks to the <profileable android:shell="true"/> entry in
+        // src/profileable/AndroidManifest.xml. Use this for representative
+        // performance/memory measurements (e.g. image cache consumption).
+        profileable {
+            initWith release
+            signingConfig signingConfigs.debug
+            matchingFallbacks = ['release']
+            // The React Native Gradle plugin only injects this placeholder for
+            // the built-in variants; provide it for our custom one. False keeps
+            // it release-equivalent (remote images are served over HTTPS).
+            manifestPlaceholders["usesCleartextTraffic"] = "false"
+        }
     }
 }
 

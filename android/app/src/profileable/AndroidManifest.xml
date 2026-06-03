@@ -1,0 +1,14 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      Makes this (non-debuggable, release-optimized) build attachable by native
+      profilers without the perf distortion of a debuggable build.
+      Requires Android 10 (API 29)+; ignored on older devices.
+    -->
+    <application>
+        <profileable
+            android:shell="true"
+            tools:targetApi="29" />
+    </application>
+</manifest>
