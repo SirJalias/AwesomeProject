@@ -1,10 +1,5 @@
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
+import React, { useRef, useState } from 'react';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, radius, spacing } from '../theme';
 import { formatPrice } from '../utils/format';
@@ -19,8 +14,8 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 /** Sticky bottom bar with quantity stepper and an animated add-to-cart button. */
 export function AddToCartBar({ price, bottomInset }: AddToCartBarProps) {
   const [qty, setQty] = useState(1);
-  const scale = useSharedValue(1);
-  const buttonStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const scale = useRef(new Animated.Value(1)).current;
+  const buttonStyle = { transform: [{ scale }] };
 
   return (
     <View style={[styles.container, { paddingBottom: Math.max(bottomInset, spacing.md) }]}>
@@ -38,8 +33,8 @@ export function AddToCartBar({ price, bottomInset }: AddToCartBarProps) {
         testID="add-to-cart-button"
         accessibilityRole="button"
         style={[styles.cta, buttonStyle]}
-        onPressIn={() => (scale.value = withSpring(0.96))}
-        onPressOut={() => (scale.value = withSpring(1))}>
+        onPressIn={() => Animated.spring(scale, { toValue: 0.96, useNativeDriver: true }).start()}
+        onPressOut={() => Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start()}>
         <Text style={styles.ctaText}>Add to cart</Text>
         <Text style={styles.ctaPrice}>{formatPrice(price * qty)}</Text>
       </AnimatedPressable>

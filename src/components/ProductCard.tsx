@@ -1,10 +1,5 @@
-import React, { memo } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
+import React, { memo, useRef } from 'react';
+import { Animated, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Product } from '../data/catalog';
 import { colors, radius, shadow, spacing } from '../theme';
@@ -25,21 +20,20 @@ function ProductCardComponent({
   variant = 'rail',
   testID,
 }: ProductCardProps) {
-  const scale = useSharedValue(1);
-  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const scale = useRef(new Animated.Value(1)).current;
 
   const isSale = product.oldPrice !== undefined;
 
   return (
     <Animated.View
-      style={[styles.wrapper, variant === 'rail' ? styles.rail : styles.grid, animatedStyle]}>
+      style={[styles.wrapper, variant === 'rail' ? styles.rail : styles.grid, { transform: [{ scale }] }]}>
       <Pressable
         testID={testID ?? `product-card-${product.id}`}
         accessibilityRole="button"
         accessibilityLabel={`${product.brand} ${product.title}`}
         onPress={() => onPress(product.id)}
-        onPressIn={() => (scale.value = withSpring(0.97))}
-        onPressOut={() => (scale.value = withSpring(1))}
+        onPressIn={() => Animated.spring(scale, { toValue: 0.97, useNativeDriver: true }).start()}
+        onPressOut={() => Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start()}
         style={styles.card}>
         <View style={styles.imageWrap}>
           <Image source={{ uri: product.image }} style={styles.image} resizeMode="cover" />

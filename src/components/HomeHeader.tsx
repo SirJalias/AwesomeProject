@@ -1,6 +1,5 @@
-import React from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { useRecentlyViewed } from '../context/RecentlyViewed';
 import { bestSellers, categories, featuredProduct, gardenPicks } from '../data/catalog';
@@ -16,11 +15,23 @@ interface HomeHeaderProps {
 export function HomeHeader({ onProductPress }: HomeHeaderProps) {
   const { recentlyViewed } = useRecentlyViewed();
 
+  // FadeInDown-equivalent entrance: fade up + slide down on mount.
+  const enter = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(enter, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+  }, [enter]);
+
   return (
     <View>
       <CategoryChips />
 
-      <Animated.View entering={FadeInDown.duration(500)}>
+      <Animated.View
+        style={{
+          opacity: enter,
+          transform: [
+            { translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [25, 0] }) },
+          ],
+        }}>
         <Pressable
           style={styles.hero}
           onPress={() => onProductPress(featuredProduct.id)}>

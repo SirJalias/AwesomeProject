@@ -148,16 +148,29 @@ flashlight report results_85.json
 flashlight report results_83.json results_85.json
 ```
 
-## Results: Hermes memory comparison
+## Results: the regression is reanimated, not Hermes V1
 
-Comparing the same browse flow on **RN 0.83** vs **RN 0.85.3** (which ships the
-new Hermes, a.k.a. "Hermes V1") shows that **Hermes V1 uses more memory than the
-previous Hermes**: RAM is consistently higher across the whole run — starting
-~110 MB higher and widening to ~160 MB higher by the end.
+Running the same browse flow across three builds tells a clear story:
 
-![RAM usage during the browse flow: RN 0.83 (green) vs RN 0.85.3 / Hermes V1 (pink) — Hermes V1 consistently uses more memory](memory_diff.png)
+| Build | avg RAM | peak RAM | end of run |
+| --- | --- | --- | --- |
+| RN 0.83 (with reanimated) | 505 MB | 564 MB | 563 MB |
+| RN 0.85.3 / Hermes V1 (with reanimated) | 657 MB | 728 MB | 726 MB |
+| RN 0.85.3 / Hermes V1 (**without** reanimated) | 503 MB | 569 MB | 556 MB |
 
-> Generated with `flashlight report results_83.json results_85.json` (RAM Usage panel).
+At first glance RN 0.85.3 ("Hermes V1") looks like a memory regression — RAM is
+consistently ~110 MB higher at the start of the run, widening to ~160 MB higher
+by the end. But removing [**react-native-reanimated**](https://github.com/software-mansion/react-native-reanimated)
+from the 0.85.3 build erases the gap entirely: RAM drops by ~150 MB and lands
+right back on the RN 0.83 baseline (503 vs 505 MB average, 569 vs 564 MB peak).
+
+**The extra memory was reanimated's native runtime, not Hermes V1.** This lines
+up with the discussion in [facebook/hermes#2048](https://github.com/facebook/hermes/issues/2048).
+
+![RAM usage during the browse flow: RN 0.83 (yellow) and RN 0.85.3 without reanimated (magenta) track together around 500–560 MB, while RN 0.85.3 with reanimated (green) sits ~150 MB higher across the whole run](memory_diff.png)
+
+> Generated with `flashlight report results_83.json results_85.json results_85_noreanimated.json` (RAM Usage panel).
+> The reanimated-free build lives on the `experiment/remove-reanimated` branch; `results_85_noreanimated.json` is its measurement.
 
 # Troubleshooting
 

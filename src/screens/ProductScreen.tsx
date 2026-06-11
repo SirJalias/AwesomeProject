@@ -1,12 +1,5 @@
-import React, { useCallback, useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, {
-  Extrapolation,
-  interpolate,
-  useAnimatedScrollHandler,
-  useAnimatedStyle,
-  useSharedValue,
-} from 'react-native-reanimated';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AddToCartBar } from '../components/AddToCartBar';
@@ -31,12 +24,13 @@ export function ProductScreen({ route, navigation }: ProductScreenProps) {
   const insets = useSafeAreaInsets();
   const { productId } = route.params;
   const product = getProductById(productId);
-  const scrollY = useSharedValue(0);
+  const scrollY = useRef(new Animated.Value(0)).current;
   const { addRecentlyViewed } = useRecentlyViewed();
 
-  const onScroll = useAnimatedScrollHandler(event => {
-    scrollY.value = event.contentOffset.y;
-  });
+  const onScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+    { useNativeDriver: true },
+  );
 
   useEffect(
     function recordView() {
@@ -54,17 +48,33 @@ export function ProductScreen({ route, navigation }: ProductScreenProps) {
   );
 
   // Parallax: image scales when over-pulled, drifts up as you scroll.
-  const galleryStyle = useAnimatedStyle(() => ({
+  const galleryStyle = {
     transform: [
-      { translateY: interpolate(scrollY.value, [-GALLERY_HEIGHT, 0], [-GALLERY_HEIGHT / 2, 0], Extrapolation.CLAMP) },
-      { scale: interpolate(scrollY.value, [-GALLERY_HEIGHT, 0], [2, 1], Extrapolation.CLAMP) },
+      {
+        translateY: scrollY.interpolate({
+          inputRange: [-GALLERY_HEIGHT, 0],
+          outputRange: [-GALLERY_HEIGHT / 2, 0],
+          extrapolate: 'clamp',
+        }),
+      },
+      {
+        scale: scrollY.interpolate({
+          inputRange: [-GALLERY_HEIGHT, 0],
+          outputRange: [2, 1],
+          extrapolate: 'clamp',
+        }),
+      },
     ],
-  }));
+  };
 
   // Collapsing solid header fades in as the gallery scrolls away.
-  const headerStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollY.value, [GALLERY_HEIGHT - 140, GALLERY_HEIGHT - 70], [0, 1], Extrapolation.CLAMP),
-  }));
+  const headerStyle = {
+    opacity: scrollY.interpolate({
+      inputRange: [GALLERY_HEIGHT - 140, GALLERY_HEIGHT - 70],
+      outputRange: [0, 1],
+      extrapolate: 'clamp',
+    }),
+  };
 
   if (!product) {
     return (

@@ -1,12 +1,5 @@
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+import React, { useRef, useState } from 'react';
+import { Animated, Pressable, StyleSheet, Text } from 'react-native';
 
 import { colors, shadow } from '../theme';
 
@@ -16,27 +9,23 @@ interface FavoriteButtonProps {
 }
 
 /**
- * Heart toggle with a Reanimated "pop" spring on activation.
+ * Heart toggle with a "pop" spring on activation.
  * Scales up then settles, mimicking the like animation on product cards.
  */
 export function FavoriteButton({ size = 36, initial = false }: FavoriteButtonProps) {
   const [active, setActive] = useState(initial);
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  const scale = useRef(new Animated.Value(1)).current;
 
   const toggle = () => {
     const next = !active;
     setActive(next);
     if (next) {
-      scale.value = withSequence(
-        withTiming(1.35, { duration: 120 }),
-        withSpring(1, { damping: 6, stiffness: 200 }),
-      );
+      Animated.sequence([
+        Animated.timing(scale, { toValue: 1.35, duration: 120, useNativeDriver: true }),
+        Animated.spring(scale, { toValue: 1, damping: 6, stiffness: 200, useNativeDriver: true }),
+      ]).start();
     } else {
-      scale.value = withSpring(1);
+      Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start();
     }
   };
 
@@ -46,7 +35,7 @@ export function FavoriteButton({ size = 36, initial = false }: FavoriteButtonPro
         style={[
           styles.circle,
           { width: size, height: size, borderRadius: size / 2 },
-          animatedStyle,
+          { transform: [{ scale }] },
         ]}>
         <Text style={[styles.heart, { color: active ? colors.sale : colors.textMuted }]}>
           {active ? '♥' : '♡'}
