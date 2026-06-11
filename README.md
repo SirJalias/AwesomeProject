@@ -148,16 +148,45 @@ flashlight report results_85.json
 flashlight report results_83.json results_85.json
 ```
 
-## Results: Hermes memory comparison
+## Results: the regression is reanimated, not Hermes V1
 
-Comparing the same browse flow on **RN 0.83** vs **RN 0.85.3** (which ships the
-new Hermes, a.k.a. "Hermes V1") shows that **Hermes V1 uses more memory than the
-previous Hermes**: RAM is consistently higher across the whole run — starting
-~110 MB higher and widening to ~160 MB higher by the end.
+At first glance RN 0.85.3 (which ships the new Hermes, a.k.a. "Hermes V1") looks
+like a memory regression: on the same browse flow, RAM is consistently ~110 MB
+higher at the start of the run and widens to ~160 MB higher by the end.
 
-![RAM usage during the browse flow: RN 0.83 (green) vs RN 0.85.3 / Hermes V1 (pink) — Hermes V1 consistently uses more memory](memory_diff.png)
+But that extra memory is **[react-native-reanimated](https://github.com/software-mansion/react-native-reanimated)'s
+native runtime, not Hermes V1**. Removing reanimated from the 0.85.3 build erases
+the gap entirely — RAM drops by ~150 MB and lands right back on the RN 0.83
+baseline:
 
-> Generated with `flashlight report results_83.json results_85.json` (RAM Usage panel).
+| Build | avg RAM | peak RAM | end of run |
+| --- | --- | --- | --- |
+| RN 0.83 (with reanimated) | 505 MB | 564 MB | 563 MB |
+| RN 0.85.3 / Hermes V1 (with reanimated) | 657 MB | 728 MB | 726 MB |
+| RN 0.85.3 / Hermes V1 (**without** reanimated) | 503 MB | 569 MB | 556 MB |
+
+![RAM usage during the browse flow: RN 0.83 (yellow) and RN 0.85.3 without reanimated (magenta) track together around 500–560 MB, while RN 0.85.3 with reanimated (green) sits ~150 MB higher across the whole run](memory_diff.png)
+
+> Generated with `flashlight report results_83.json results_85.json results_85_noreanimated.json` (RAM Usage panel).
+
+### Reproducing the reanimated-free build
+
+The build with `react-native-reanimated` removed (its animations reimplemented on
+React Native's built-in `Animated` API) lives on the
+[`experiment/remove-reanimated`](https://github.com/SirJalias/AwesomeProject/tree/experiment/remove-reanimated) branch,
+together with its `results_85_noreanimated.json` measurement. Check it out and
+re-run [Step 1](#step-1-build-a-profileable-apk) and
+[Step 2](#step-2-run-the-flashlight-performance-test) to reproduce the magenta
+line above:
+
+```sh
+git checkout experiment/remove-reanimated
+pnpm install
+bash scripts/android-profileable.sh --clean
+pnpm flashlight -- --output results_85_noreanimated.json
+```
+
+This aligns with the discussion in [facebook/hermes#2048](https://github.com/facebook/hermes/issues/2048).
 
 # Troubleshooting
 
